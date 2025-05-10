@@ -1,14 +1,14 @@
 const config = {
   //网页元数据
   metaData:{
-    title: 'Leleo的个人主页🎉',
-    description: '欢迎来到Leleo的奇妙世界！',
-    keywords: 'Leleo,leleo,个人主页,个人网站',
-    icon: '/favicon.ico'   //网页图标，支持外链
+    title: '番星的个人主页🎉',
+    description: '欢迎来到番星的奇妙世界！',
+    keywords: 'fanxing,xing,个人主页,个人网站',
+    icon: 'https://img.wxcha.com/m00/52/c2/0a43cef0585fc6d26f84f4e673d8d4a8.png?down'   //网页图标，支持外链
   },
 
-  avatar: "/img/avatar.jpg", // 头像
-  welcometitle: "Hi, I'm Leleo", // 标题
+  avatar: "https://img.wxcha.com/m00/52/c2/0a43cef0585fc6d26f84f4e673d8d4a8.png?down", // 头像
+  welcometitle: "Hi, I'm fanxing", // 标题
 
   // 颜色配置
   color: {
@@ -143,7 +143,7 @@ const config = {
     {go:"🔍 前往",img:"/img/sunshine.jpg",title:"Project 8",subtitle:"8,000 miles of wonder", text:"If you see this line, I've managed to get your attention.",url:"https://leleo.top",show:false},
   ],
   
-  statement: ["备案号：XXICP备123456789号","Copyright © 2025 Leleo"],
+  statement: ["备案号：赣ICP备1314520号","Copyright © 2025 fanxing"],
 }
 
 export default config
