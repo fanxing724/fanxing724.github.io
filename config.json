@@ -1,6 +1,10 @@
 {
-    "title":"Blog Title",
-    "subTitle":"Blog description",
-    "avatarUrl":"https://github.githubassets.com/favicons/favicon.svg",
-    "GMEEK_VERSION":"last"
+    "title":"番星小站",
+    "subTitle":"开始记录生活的小废物",
+    "avatarUrl":"https://c-ssl.dtstatic.com/uploads/blog/202105/17/20210517045857_757ba.thumb.300_0.jpeg_webp",
+    "GMEEK_VERSION":"last",
+    "startSite":"10/21/2025",
+    "onePageListNum":15,
+    "i18n":"CN",
+    "needComment":0
 }
