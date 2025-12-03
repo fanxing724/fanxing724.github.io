@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="致刘子梁的专属告白网站">
+    <meta name="keywords" content="刘子梁,告白,心意,回忆">
+    <meta name="author" content="爱你的人">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- 预连接资源 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- 预加载CSS -->
+    <link rel="preload" href="style.css" as="style">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <title>致刘子梁的告白</title>
+</head>
+<body>
+    <!-- 欢迎页面 -->
+    <section id="welcome" class="welcome-section">
+        <div class="welcome-content">
+            <h1 class="welcome-title">亲爱的刘子梁</h1>
+            <p class="welcome-subtitle">这是专属于你的告白网站</p>
+            <div class="welcome-animation">
+                <div class="heart"></div>
+            </div>
+            <a href="#message" class="btn btn-primary">开始阅读</a>
+        </div>
+    </section>
+
+    <!-- 心意文字内容 -->
+    <section id="message" class="message-section">
+        <div class="container">
+            <h2 class="section-title">我的心意</h2>
+            <div class="message-content">
+                <p>亲爱的子梁：</p>
+                <p>当你打开这个网站的时候，我想对你说...</p>
+                <p>认识你是我生命中最美好的事情之一，你的笑容、你的善良、你的一切都深深吸引着我。</p>
+                <p>每一次和你相处的时光，都让我感到无比的幸福和温暖。</p>
+                <p>我想告诉你，我喜欢你，不仅仅是因为你的外表，更是因为你那颗真诚、善良的心。</p>
+                <p>希望我们能一起创造更多美好的回忆，一起走过人生的每一个阶段。</p>
+                <p class="message-signature">爱你的人</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 照片展示区 -->
+    <section id="photos" class="photos-section">
+        <div class="container">
+            <h2 class="section-title">美好回忆</h2>
+            <div class="photo-gallery">
+                <!-- 美好回忆照片 -->
+                <div class="photo-item">
+                    <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEL8iJpMDc_NoLPQdA36E4lD8_W8aaI2AACjSMAAiYIgVX3tNK9VmDA9jYE.jfif" alt="美好回忆1" class="gallery-photo">
+                </div>
+                <div class="photo-item">
+                    <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEL8iVpMDdAVLFDEIiqVHZpAsYeRSOoxAACkCMAAiYIgVW5iMkuGwZvUDYE.png" alt="美好回忆2" class="gallery-photo">
+                </div>
+                <div class="photo-item">
+                    <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEL8iNpMDc_jZ8wWhjk20NGHRKLtWN6RAACjiMAAiYIgVWRImGbMOcn2DYE.png" alt="美好回忆3" class="gallery-photo">
+                </div>
+                <div class="photo-item">
+                    <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEL8iRpMDc_ER5RILEBjPGGwFaxhx2srgACjyMAAiYIgVWFoB2F234ZzDYE.png" alt="美好回忆4" class="gallery-photo">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 互动元素区 -->
+    <section id="interactive" class="interactive-section">
+        <div class="container">
+            <h2 class="section-title">给你的小惊喜</h2>
+            <div class="interactive-content">
+                <div class="wish-card">
+                    <h3>点击查看我的祝福</h3>
+                    <button class="btn btn-secondary" id="wishBtn">打开祝福</button>
+                    <div class="wish-message" id="wishMessage">
+                        <p>愿你永远开心快乐，每天都充满阳光！（我永远爱你）</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 专属于刘子梁的告白网站</p>
+        </div>
+    </footer>
+
+    <!-- 脚本文件放在页面底部以提高加载性能 -->
+    <script src="script.js"></script>
+</body>
+</html>
