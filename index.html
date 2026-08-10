@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAN-C137 // C-137 PORTAL</title>
+  <meta name="description" content="C-137 实验体档案终端">
+  <style>
+    /* === 基础 === */
+    :root {
+      --bg: #0a0a0a;
+      --terminal-green: #00ff41;
+      --dim-green: #008f24;
+      --white: #e0e0e0;
+      --dim-white: #666;
+      --accent-gold: #b8860b;
+      --border: #1a1a1a;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { background: var(--bg); }
+    body {
+      font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", "Menlo", monospace;
+      background: var(--bg);
+      color: var(--terminal-green);
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding: 0;
+    }
+    /* CRT 扫描线 */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0) 0px,
+        rgba(0,0,0,0) 2px,
+        rgba(0,255,65,0.015) 3px,
+        rgba(0,0,0,0) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+    /* 暗角 */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%);
+      pointer-events: none;
+      z-index: 9998;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* === 启动画面 === */
+    #boot-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    #boot-log {
+      width: 100%;
+      max-width: 680px;
+    }
+    .boot-line {
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-all;
+      opacity: 0;
+      animation: bootIn 0.1s forwards;
+    }
+    .boot-line .ok { color: var(--terminal-green); }
+    .boot-line .warn { color: var(--accent-gold); }
+    .boot-line .dim { color: var(--dim-white); }
+    @keyframes bootIn {
+      to { opacity: 1; }
+    }
+    #boot-cursor {
+      display: inline-block;
+      width: 8px;
+      height: 15px;
+      background: var(--terminal-green);
+      animation: blink 0.8s step-end infinite;
+      vertical-align: middle;
+    }
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+    #boot-continue {
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--dim-white);
+      cursor: pointer;
+      animation: pulse 1.5s ease-in-out infinite;
+      opacity: 0;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+
+    /* === 主界面 === */
+    #main-screen {
+      display: none;
+    }
+
+    .section {
+      margin-bottom: 36px;
+    }
+    .section-title {
+      font-size: 11px;
+      color: var(--dim-green);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-title::before {
+      content: "// ";
+      color: var(--dim-white);
+    }
+
+    /* 头部 */
+    .header-block {
+      text-align: center;
+      padding: 20px 0 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+    }
+    .header-id {
+      font-size: 11px;
+      color: var(--dim-white);
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+    }
+    .header-title {
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--terminal-green);
+      letter-spacing: 4px;
+      margin-bottom: 4px;
+    }
+    .header-sub {
+      font-size: 13px;
+      color: var(--dim-green);
+      letter-spacing: 6px;
+    }
+
+    /* 参数表 */
+    .param-table {
+      width: 100%;
+      font-size: 13px;
+      line-height: 1.9;
+    }
+    .param-table .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 1px 0;
+    }
+    .param-table .label {
+      color: var(--dim-white);
+      flex-shrink: 0;
+      min-width: 90px;
+    }
+    .param-table .dots {
+      flex: 1;
+      border-bottom: 1px dotted var(--border);
+      margin: 0 8px;
+      position: relative;
+      top: -3px;
+    }
+    .param-table .value {
+      color: var(--terminal-green);
+      text-align: right;
+    }
+    .param-table .value.warn { color: var(--accent-gold); }
+    .param-table .value.dim { color: var(--dim-white); }
+
+    /* 模块 */
+    .module-list {
+      list-style: none;
+    }
+    .module-item {
+      display: flex;
+      align-items: baseline;
+      font-size: 13px;
+      line-height: 2;
+    }
+    .module-num {
+      color: var(--dim-white);
+      width: 32px;
+      flex-shrink: 0;
+    }
+    .module-name {
+      color: var(--white);
+      flex: 1;
+    }
+    .module-status {
+      color: var(--terminal-green);
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+    .module-status.gold { color: var(--accent-gold); }
+    .module-dots {
+      flex: 0 1 60px;
+      border-bottom: 1px dotted var(--border);
+      margin: 0 8px;
+      position: relative;
+      top: -3px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    /* 传送门 */
+    .portal-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .portal-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: var(--terminal-green);
+      font-size: 13px;
+      letter-spacing: 1px;
+      background: rgba(0,255,65,0.02);
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .portal-link::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--terminal-green);
+      opacity: 0.3;
+      transition: opacity 0.2s;
+    }
+    .portal-link:hover {
+      border-color: var(--dim-green);
+      background: rgba(0,255,65,0.06);
+    }
+    .portal-link:hover::before { opacity: 1; }
+    .portal-name {
+      color: var(--white);
+    }
+    .portal-arrow {
+      color: var(--dim-green);
+      font-size: 14px;
+    }
+    .portal-addr {
+      font-size: 11px;
+      color: var(--dim-white);
+      margin-top: 2px;
+    }
+    .portal-left { display: flex; flex-direction: column; }
+
+    /* 异常日志 */
+    .anomaly-list {
+      font-size: 12px;
+      line-height: 1.9;
+    }
+    .anomaly-entry {
+      display: flex;
+      gap: 8px;
+      padding: 2px 0;
+    }
+    .anomaly-time {
+      color: var(--dim-white);
+      flex-shrink: 0;
+    }
+    .anomaly-level {
+      color: var(--accent-gold);
+      flex-shrink: 0;
+      width: 60px;
+    }
+    .anomaly-level.critical { color: #ff3333; }
+    .anomaly-msg {
+      color: var(--white);
+    }
+
+    /* 金句 */
+    .quote-block {
+      text-align: center;
+      padding: 20px 16px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 36px 0;
+    }
+    .quote-text {
+      font-size: 14px;
+      color: var(--terminal-green);
+      letter-spacing: 2px;
+      line-height: 1.8;
+    }
+    .quote-sub {
+      font-size: 11px;
+      color: var(--dim-white);
+      margin-top: 8px;
+      letter-spacing: 3px;
+    }
+
+    /* 底部 */
+    .footer {
+      text-align: center;
+      padding-top: 30px;
+      margin-top: 10px;
+    }
+    .footer-text {
+      font-size: 11px;
+      color: var(--dim-white);
+      letter-spacing: 4px;
+      margin-bottom: 16px;
+    }
+    .footer-bg {
+      font-size: 9px;
+      color: rgba(102,102,102,0.3);
+      letter-spacing: 1px;
+    }
+
+    /* 光标 */
+    .cursor {
+      display: inline-block;
+      width: 7px;
+      height: 13px;
+      background: var(--terminal-green);
+      animation: blink 0.8s step-end infinite;
+      vertical-align: middle;
+      margin-left: 2px;
+    }
+
+    /* 移动端 */
+    @media (max-width: 480px) {
+      .container { padding: 16px 14px 50px; }
+      .header-title { font-size: 22px; letter-spacing: 2px; }
+      .boot-line { font-size: 12px; }
+      .param-table { font-size: 12px; }
+      .param-table .label { min-width: 70px; }
+      .module-item { font-size: 12px; }
+      .portal-link { padding: 12px 14px; }
+      .anomaly-list { font-size: 11px; }
+      .quote-text { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 启动画面 -->
+<div id="boot-screen">
+  <div id="boot-log"></div>
+  <div id="boot-continue" onclick="enterMain()">
+    [ PRESS ANYWHERE TO CONTINUE ]
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div id="main-screen">
+  <div class="container">
+
+    <!-- 头部 -->
+    <div class="header-block">
+      <div class="header-id">DIMENSION C-137</div>
+      <div class="header-title">FAN-C137</div>
+      <div class="header-sub">EXPERIMENT SUBJECT FILE</div>
+    </div>
+
+    <!-- 参数 -->
+    <div class="section">
+      <div class="section-title">Subject Parameters</div>
+      <div class="param-table">
+        <div class="row">
+          <span class="label">SUBJECT</span>
+          <span class="dots"></span>
+          <span class="value">范安星 / 番星</span>
+        </div>
+        <div class="row">
+          <span class="label">ID</span>
+          <span class="dots"></span>
+          <span class="value">FAN-C137</span>
+        </div>
+        <div class="row">
+          <span class="label">出厂日期</span>
+          <span class="dots"></span>
+          <span class="value">2007.02.04</span>
+        </div>
+        <div class="row">
+          <span class="label">常驻坐标</span>
+          <span class="dots"></span>
+          <span class="value">江西 · 吉安</span>
+        </div>
+        <div class="row">
+          <span class="label">运行模式</span>
+          <span class="dots"></span>
+          <span class="value">LOW POWER / IDLE</span>
+        </div>
+        <div class="row">
+          <span class="label">认知引擎</span>
+          <span class="dots"></span>
+          <span class="value">AI ASSISTED</span>
+        </div>
+        <div class="row">
+          <span class="label">思考协议</span>
+          <span class="dots"></span>
+          <span class="value">外包给 AI</span>
+        </div>
+        <div class="row">
+          <span class="label">性格</span>
+          <span class="dots"></span>
+          <span class="value">内向内敛</span>
+        </div>
+        <div class="row">
+          <span class="label">充能需求</span>
+          <span class="dots"></span>
+          <span class="value">8-10H 休眠周期</span>
+        </div>
+        <div class="row">
+          <span class="label">状态</span>
+          <span class="dots"></span>
+          <span class="value">FUNCTIONAL</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 已加载模块 -->
+    <div class="section">
+      <div class="section-title">Loaded Modules</div>
+      <ul class="module-list">
+        <li class="module-item">
+          <span class="module-num">01</span>
+          <span class="module-name">AI QUESTION SOLVING</span>
+          <span class="module-dots"></span>
+          <span class="module-status">ONLINE</span>
+        </li>
+        <li class="module-item">
+          <span class="module-num">02</span>
+          <span class="module-name">SERVER MAINTENANCE</span>
+          <span class="module-dots"></span>
+          <span class="module-status">ACTIVE</span>
+        </li>
+        <li class="module-item">
+          <span class="module-num">03</span>
+          <span class="module-name">CONTAINER CONTROL</span>
+          <span class="module-dots"></span>
+          <span class="module-status">RUNNING</span>
+        </li>
+        <li class="module-item">
+          <span class="module-num">04</span>
+          <span class="module-name">CODE REPOSITORY</span>
+          <span class="module-dots"></span>
+          <span class="module-status">SYNCED</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 金句 -->
+    <div class="quote-block">
+      <div class="quote-text">宇宙没有KPI，活着就不算宕机。</div>
+      <div class="quote-sub">PRIMARY PROTOCOL</div>
+    </div>
+
+    <!-- 传送门 -->
+    <div class="section">
+      <div class="section-title">Portal Gateways</div>
+      <div class="portal-grid">
+        <a class="portal-link" href="https://github.com/fanxing724" target="_blank" rel="noopener">
+          <div class="portal-left">
+            <span class="portal-name">CODE REPOSITORY</span>
+            <span class="portal-addr">github.com/fanxing724</span>
+          </div>
+          <span class="portal-arrow">&gt;&gt;</span>
+        </a>
+        <a class="portal-link" href="mailto:fan@c137.local" onclick="return false;">
+          <div class="portal-left">
+            <span class="portal-name">COMM CHANNEL</span>
+            <span class="portal-addr">fan@c137.local</span>
+          </div>
+          <span class="portal-arrow">&gt;&gt;</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 异常日志 -->
+    <div class="section">
+      <div class="section-title">Anomaly Log</div>
+      <div class="anomaly-list">
+        <div class="anomaly-entry">
+          <span class="anomaly-time">2007.02.04</span>
+          <span class="anomaly-level">INFO</span>
+          <span class="anomaly-msg">实验体激活。初始状态：哭。诊断：正常。</span>
+        </div>
+        <div class="anomaly-entry">
+          <span class="anomaly-time">20XX.XX.XX</span>
+          <span class="anomaly-level">WARN</span>
+          <span class="anomaly-msg">认知引擎过载，已外包至 AI 处理。</span>
+        </div>
+        <div class="anomaly-entry">
+          <span class="anomaly-time">CURRENT</span>
+          <span class="anomaly-level">CRIT</span>
+          <span class="anomaly-msg">实验体声称自己将成为派大星。监控中。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部 -->
+    <div class="footer">
+      <div class="footer-text">WUBBA LUBBA DUB DUB</div>
+      <div class="footer-bg">BACKGROUND PROCESS: 摸鱼 — PID 404 — CPU 3%</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // === 启动动画 ===
+  const bootLines = [
+    { text: "[ <span class='ok'>OK</span> ] Initializing C-137 portal gateway...", delay: 200 },
+    { text: "[ <span class='ok'>OK</span> ] Establishing interdimensional link...", delay: 300 },
+    { text: "[ <span class='ok'>OK</span> ] Decrypting subject file FAN-C137...", delay: 350 },
+    { text: "[ <span class='ok'>OK</span> ] Classification level: PUBLIC", delay: 250 },
+    { text: "[ <span class='warn'>WARN</span> ] Subject status: ANOMALOUS_HUMAN", delay: 300 },
+    { text: "[ <span class='warn'>WARN</span> ] Power mode: LOW_POWER / IDLE", delay: 300 },
+    { text: "[ <span class='ok'>OK</span> ] Cognitive engine: AI_ASSISTED (delegated)", delay: 350 },
+    { text: "[ <span class='dim'>...</span> ] Loading modules: 4/4", delay: 300 },
+    { text: "", delay: 100 },
+    { text: "<span class='dim'>PORTAL ACCESS GRANTED.</span>", delay: 200 },
+    { text: "", delay: 100 },
+    { text: "<span class='ok'>Welcome to Dimension C-137.</span>", delay: 400 },
+  ];
+
+  const bootLog = document.getElementById('boot-log');
+  const bootContinue = document.getElementById('boot-continue');
+  const mainScreen = document.getElementById('main-screen');
+  const bootScreen = document.getElementById('boot-screen');
+
+  let lineIndex = 0;
+
+  function typeBootLine() {
+    if (lineIndex < bootLines.length) {
+      const line = bootLines[lineIndex];
+      const div = document.createElement('div');
+      div.className = 'boot-line';
+      div.innerHTML = line.text || '&nbsp;';
+      bootLog.appendChild(div);
+      lineIndex++;
+      setTimeout(typeBootLine, line.delay);
+    } else {
+      // 显示继续提示
+      setTimeout(() => {
+        bootContinue.style.opacity = '1';
+        bootContinue.style.animation = 'pulse 1.5s ease-in-out infinite';
+      }, 300);
+    }
+  }
+
+  // 点击任意位置进入
+  let entered = false;
+  function enterMain() {
+    if (entered) return;
+    entered = true;
+    bootScreen.style.transition = 'opacity 0.4s';
+    bootScreen.style.opacity = '0';
+    setTimeout(() => {
+      bootScreen.style.display = 'none';
+      mainScreen.style.display = 'block';
+      mainScreen.style.opacity = '0';
+      mainScreen.style.transition = 'opacity 0.5s';
+      requestAnimationFrame(() => {
+        mainScreen.style.opacity = '1';
+      });
+    }, 400);
+  }
+
+  // 启动
+  window.addEventListener('load', () => {
+    setTimeout(typeBootLine, 400);
+  });
+
+  // 防止用户错过动画直接点进
+  bootScreen.addEventListener('click', () => {
+    if (lineIndex >= bootLines.length) {
+      enterMain();
+    }
+  });
+</script>
+
+</body>
+</html>
