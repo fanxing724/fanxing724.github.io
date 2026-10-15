@@ -1,606 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FAN-C137 // C-137 PORTAL</title>
-  <meta name="description" content="C-137 实验体档案终端">
-  <style>
-    /* === 基础 === */
-    :root {
-      --bg: #0a0a0a;
-      --terminal-green: #00ff41;
-      --dim-green: #008f24;
-      --white: #e0e0e0;
-      --dim-white: #666;
-      --accent-gold: #b8860b;
-      --border: #1a1a1a;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { background: var(--bg); }
-    body {
-      font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", "Menlo", monospace;
-      background: var(--bg);
-      color: var(--terminal-green);
-      min-height: 100vh;
-      overflow-x: hidden;
-      padding: 0;
-    }
-    /* CRT 扫描线 */
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        rgba(0,0,0,0) 0px,
-        rgba(0,0,0,0) 2px,
-        rgba(0,255,65,0.015) 3px,
-        rgba(0,0,0,0) 4px
-      );
-      pointer-events: none;
-      z-index: 9999;
-    }
-    /* 暗角 */
-    body::after {
-      content: "";
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%);
-      pointer-events: none;
-      z-index: 9998;
-    }
-
-    .container {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 24px 20px 60px;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* === 启动画面 === */
-    #boot-screen {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    #boot-log {
-      width: 100%;
-      max-width: 680px;
-    }
-    .boot-line {
-      font-size: 13px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-all;
-      opacity: 0;
-      animation: bootIn 0.1s forwards;
-    }
-    .boot-line .ok { color: var(--terminal-green); }
-    .boot-line .warn { color: var(--accent-gold); }
-    .boot-line .dim { color: var(--dim-white); }
-    @keyframes bootIn {
-      to { opacity: 1; }
-    }
-    #boot-cursor {
-      display: inline-block;
-      width: 8px;
-      height: 15px;
-      background: var(--terminal-green);
-      animation: blink 0.8s step-end infinite;
-      vertical-align: middle;
-    }
-    @keyframes blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0; }
-    }
-    #boot-continue {
-      margin-top: 24px;
-      font-size: 12px;
-      color: var(--dim-white);
-      cursor: pointer;
-      animation: pulse 1.5s ease-in-out infinite;
-      opacity: 0;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 0.7; }
-    }
-
-    /* === 主界面 === */
-    #main-screen {
-      display: none;
-    }
-
-    .section {
-      margin-bottom: 36px;
-    }
-    .section-title {
-      font-size: 11px;
-      color: var(--dim-green);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid var(--border);
-    }
-    .section-title::before {
-      content: "// ";
-      color: var(--dim-white);
-    }
-
-    /* 头部 */
-    .header-block {
-      text-align: center;
-      padding: 20px 0 28px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 36px;
-    }
-    .header-id {
-      font-size: 11px;
-      color: var(--dim-white);
-      letter-spacing: 3px;
-      margin-bottom: 8px;
-    }
-    .header-title {
-      font-size: 28px;
-      font-weight: bold;
-      color: var(--terminal-green);
-      letter-spacing: 4px;
-      margin-bottom: 4px;
-    }
-    .header-sub {
-      font-size: 13px;
-      color: var(--dim-green);
-      letter-spacing: 6px;
-    }
-
-    /* 参数表 */
-    .param-table {
-      width: 100%;
-      font-size: 13px;
-      line-height: 1.9;
-    }
-    .param-table .row {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 1px 0;
-    }
-    .param-table .label {
-      color: var(--dim-white);
-      flex-shrink: 0;
-      min-width: 90px;
-    }
-    .param-table .dots {
-      flex: 1;
-      border-bottom: 1px dotted var(--border);
-      margin: 0 8px;
-      position: relative;
-      top: -3px;
-    }
-    .param-table .value {
-      color: var(--terminal-green);
-      text-align: right;
-    }
-    .param-table .value.warn { color: var(--accent-gold); }
-    .param-table .value.dim { color: var(--dim-white); }
-
-    /* 模块 */
-    .module-list {
-      list-style: none;
-    }
-    .module-item {
-      display: flex;
-      align-items: baseline;
-      font-size: 13px;
-      line-height: 2;
-    }
-    .module-num {
-      color: var(--dim-white);
-      width: 32px;
-      flex-shrink: 0;
-    }
-    .module-name {
-      color: var(--white);
-      flex: 1;
-    }
-    .module-status {
-      color: var(--terminal-green);
-      font-size: 11px;
-      letter-spacing: 1px;
-    }
-    .module-status.gold { color: var(--accent-gold); }
-    .module-dots {
-      flex: 0 1 60px;
-      border-bottom: 1px dotted var(--border);
-      margin: 0 8px;
-      position: relative;
-      top: -3px;
-      overflow: hidden;
-      white-space: nowrap;
-    }
-
-    /* 传送门 */
-    .portal-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .portal-link {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 18px;
-      border: 1px solid var(--border);
-      text-decoration: none;
-      color: var(--terminal-green);
-      font-size: 13px;
-      letter-spacing: 1px;
-      background: rgba(0,255,65,0.02);
-      transition: all 0.2s;
-      position: relative;
-      overflow: hidden;
-    }
-    .portal-link::before {
-      content: "";
-      position: absolute;
-      left: 0; top: 0; bottom: 0;
-      width: 3px;
-      background: var(--terminal-green);
-      opacity: 0.3;
-      transition: opacity 0.2s;
-    }
-    .portal-link:hover {
-      border-color: var(--dim-green);
-      background: rgba(0,255,65,0.06);
-    }
-    .portal-link:hover::before { opacity: 1; }
-    .portal-name {
-      color: var(--white);
-    }
-    .portal-arrow {
-      color: var(--dim-green);
-      font-size: 14px;
-    }
-    .portal-addr {
-      font-size: 11px;
-      color: var(--dim-white);
-      margin-top: 2px;
-    }
-    .portal-left { display: flex; flex-direction: column; }
-
-    /* 异常日志 */
-    .anomaly-list {
-      font-size: 12px;
-      line-height: 1.9;
-    }
-    .anomaly-entry {
-      display: flex;
-      gap: 8px;
-      padding: 2px 0;
-    }
-    .anomaly-time {
-      color: var(--dim-white);
-      flex-shrink: 0;
-    }
-    .anomaly-level {
-      color: var(--accent-gold);
-      flex-shrink: 0;
-      width: 60px;
-    }
-    .anomaly-level.critical { color: #ff3333; }
-    .anomaly-msg {
-      color: var(--white);
-    }
-
-    /* 金句 */
-    .quote-block {
-      text-align: center;
-      padding: 20px 16px;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      margin: 36px 0;
-    }
-    .quote-text {
-      font-size: 14px;
-      color: var(--terminal-green);
-      letter-spacing: 2px;
-      line-height: 1.8;
-    }
-    .quote-sub {
-      font-size: 11px;
-      color: var(--dim-white);
-      margin-top: 8px;
-      letter-spacing: 3px;
-    }
-
-    /* 底部 */
-    .footer {
-      text-align: center;
-      padding-top: 30px;
-      margin-top: 10px;
-    }
-    .footer-text {
-      font-size: 11px;
-      color: var(--dim-white);
-      letter-spacing: 4px;
-      margin-bottom: 16px;
-    }
-    .footer-bg {
-      font-size: 9px;
-      color: rgba(102,102,102,0.3);
-      letter-spacing: 1px;
-    }
-
-    /* 光标 */
-    .cursor {
-      display: inline-block;
-      width: 7px;
-      height: 13px;
-      background: var(--terminal-green);
-      animation: blink 0.8s step-end infinite;
-      vertical-align: middle;
-      margin-left: 2px;
-    }
-
-    /* 移动端 */
-    @media (max-width: 480px) {
-      .container { padding: 16px 14px 50px; }
-      .header-title { font-size: 22px; letter-spacing: 2px; }
-      .boot-line { font-size: 12px; }
-      .param-table { font-size: 12px; }
-      .param-table .label { min-width: 70px; }
-      .module-item { font-size: 12px; }
-      .portal-link { padding: 12px 14px; }
-      .anomaly-list { font-size: 11px; }
-      .quote-text { font-size: 13px; }
-    }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="我是番星。代码主要由 AI 完成，想法来自日常：AI 陪伴、实用工具、设备折腾与一些有趣的小实验。">
+  <meta name="theme-color" content="#f5f7fc">
+  <meta property="og:title" content="番星 · 小小宇宙">
+  <meta property="og:description" content="代码交给 AI，想法留给自己。记录我的项目、好奇心与折腾日常。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://fanxing724.github.io/">
+  <meta property="og:image" content="https://fanxing724.github.io/assets/orbit-light.webp">
+  <title>番星 · 小小宇宙</title>
+  <link rel="icon" href="assets/star.svg" type="image/svg+xml">
+  <script>
+    (() => {
+      let preference = 'system';
+      try { preference = localStorage.getItem('orbit-theme') || 'system'; } catch {}
+      if (!['system', 'light', 'dark'].includes(preference)) preference = 'system';
+      document.documentElement.dataset.preference = preference;
+      document.documentElement.dataset.theme = preference === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : preference;
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main">跳到正文</a>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="番星，返回顶部"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m16 2 3.9 9.6L30 16l-10.1 4.4L16 30l-4.1-9.6L2 16l9.9-4.4Z"/></svg><span>番星<span class="brand-dot">.</span></span></a>
+    <nav aria-label="主导航"><a href="#about">关于</a><a href="#projects">项目</a><a href="#activity">星轨</a><a class="nav-github" href="https://github.com/fanxing724" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a></nav>
+    <button class="theme-toggle" type="button" aria-label="切换颜色主题" title="切换颜色主题" hidden><span class="theme-icon" aria-hidden="true">◐</span><span id="theme-label">跟随系统</span></button>
+  </header>
 
-<!-- 启动画面 -->
-<div id="boot-screen">
-  <div id="boot-log"></div>
-  <div id="boot-continue" onclick="enterMain()">
-    [ PRESS ANYWHERE TO CONTINUE ]
-  </div>
-</div>
-
-<!-- 主界面 -->
-<div id="main-screen">
-  <div class="container">
-
-    <!-- 头部 -->
-    <div class="header-block">
-      <div class="header-id">DIMENSION C-137</div>
-      <div class="header-title">FAN-C137</div>
-      <div class="header-sub">EXPERIMENT SUBJECT FILE</div>
-    </div>
-
-    <!-- 参数 -->
-    <div class="section">
-      <div class="section-title">Subject Parameters</div>
-      <div class="param-table">
-        <div class="row">
-          <span class="label">SUBJECT</span>
-          <span class="dots"></span>
-          <span class="value">ANO-137</span>
-        </div>
-        <div class="row">
-          <span class="label">ID</span>
-          <span class="dots"></span>
-          <span class="value">FAN-C137</span>
-        </div>
-        <div class="row">
-          <span class="label">出厂日期</span>
-          <span class="dots"></span>
-          <span class="value">REDACTED</span>
-        </div>
-        <div class="row">
-          <span class="label">常驻坐标</span>
-          <span class="dots"></span>
-          <span class="value">SECTOR C-137</span>
-        </div>
-        <div class="row">
-          <span class="label">运行模式</span>
-          <span class="dots"></span>
-          <span class="value">LOW POWER / IDLE</span>
-        </div>
-        <div class="row">
-          <span class="label">认知引擎</span>
-          <span class="dots"></span>
-          <span class="value">AI ASSISTED</span>
-        </div>
-        <div class="row">
-          <span class="label">思考协议</span>
-          <span class="dots"></span>
-          <span class="value">外包给 AI</span>
-        </div>
-        <div class="row">
-          <span class="label">性格</span>
-          <span class="dots"></span>
-          <span class="value">内向内敛</span>
-        </div>
-        <div class="row">
-          <span class="label">充能需求</span>
-          <span class="dots"></span>
-          <span class="value">8-10H 休眠周期</span>
-        </div>
-        <div class="row">
-          <span class="label">状态</span>
-          <span class="dots"></span>
-          <span class="value">FUNCTIONAL</span>
-        </div>
+  <main id="main" class="shell">
+    <section class="hero" aria-labelledby="hero-title">
+      <picture class="hero-art theme-picture" aria-hidden="true">
+        <source data-light media="(prefers-color-scheme: light)" srcset="assets/orbit-light.webp">
+        <img src="assets/orbit-dark.webp" alt="" width="600" height="337" fetchpriority="high">
+      </picture>
+      <div class="hero-shade"></div><div class="orbit orbit-one" aria-hidden="true"></div><div class="orbit orbit-two" aria-hidden="true"></div>
+      <div class="hero-content">
+        <div class="eyebrow"><span class="status-dot"></span> WELCOME TO MY LITTLE UNIVERSE</div>
+        <h1 id="hero-title">嗨，我是<span>番星</span><i>✦</i></h1>
+        <p class="hero-heading">代码交给 AI，<br>想法留给自己。</p>
+        <p class="hero-description">一点好奇心，一些小需求，<br>和 AI 一起，把「要不试试」变成能用的东西。</p>
+        <div class="hero-actions"><a class="button button-primary" href="#projects">看看我的折腾 <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/fanxing724" target="_blank" rel="noopener noreferrer">认识一下 <span aria-hidden="true">↗</span></a></div>
       </div>
-    </div>
+      <div class="hero-bottom"><span>PERSONAL ORBIT / C-137</span><span>保持好奇，偶尔摸鱼 <span aria-hidden="true">✧</span></span></div>
+      <span class="hero-spark" aria-hidden="true">✦</span>
+    </section>
 
-    <!-- 已加载模块 -->
-    <div class="section">
-      <div class="section-title">Loaded Modules</div>
-      <ul class="module-list">
-        <li class="module-item">
-          <span class="module-num">01</span>
-          <span class="module-name">AI QUESTION SOLVING</span>
-          <span class="module-dots"></span>
-          <span class="module-status">ONLINE</span>
-        </li>
-        <li class="module-item">
-          <span class="module-num">02</span>
-          <span class="module-name">SERVER MAINTENANCE</span>
-          <span class="module-dots"></span>
-          <span class="module-status">ACTIVE</span>
-        </li>
-        <li class="module-item">
-          <span class="module-num">03</span>
-          <span class="module-name">CONTAINER CONTROL</span>
-          <span class="module-dots"></span>
-          <span class="module-status">RUNNING</span>
-        </li>
-        <li class="module-item">
-          <span class="module-num">04</span>
-          <span class="module-name">CODE REPOSITORY</span>
-          <span class="module-dots"></span>
-          <span class="module-status">SYNCED</span>
-        </li>
-      </ul>
-    </div>
-
-    <!-- 金句 -->
-    <div class="quote-block">
-      <div class="quote-text">宇宙没有KPI，活着就不算宕机。</div>
-      <div class="quote-sub">PRIMARY PROTOCOL</div>
-    </div>
-
-    <!-- 传送门 -->
-    <div class="section">
-      <div class="section-title">Portal Gateways</div>
-      <div class="portal-grid">
-        <a class="portal-link" href="https://github.com/fanxing724" target="_blank" rel="noopener">
-          <div class="portal-left">
-            <span class="portal-name">CODE REPOSITORY</span>
-            <span class="portal-addr">github.com/fanxing724</span>
-          </div>
-          <span class="portal-arrow">&gt;&gt;</span>
-        </a>
-        <a class="portal-link" href="mailto:fan@c137.local" onclick="return false;">
-          <div class="portal-left">
-            <span class="portal-name">COMM CHANNEL</span>
-            <span class="portal-addr">fan@c137.local</span>
-          </div>
-          <span class="portal-arrow">&gt;&gt;</span>
-        </a>
+    <section class="about section" id="about" aria-labelledby="about-title">
+      <div class="about-intro"><p class="eyebrow">01 / A LITTLE ABOUT ME</p><h2 id="about-title">有一点好奇心，<br>就想动手试试看。</h2><p>这里是我的小小实验场。代码主要由 AI 完成，我把生活里的需求和突发奇想带进来，一边试，一边改，慢慢把它们变成自己的工具。</p><a class="text-link" href="https://github.com/fanxing724?tab=repositories" target="_blank" rel="noopener noreferrer">去 GitHub 随便逛逛 <span aria-hidden="true">↗</span></a></div>
+      <div class="interests">
+        <div class="interest"><span class="interest-icon" aria-hidden="true">✧</span><div><h3>让 AI 多一点陪伴感</h3><p>从角色对话到日程、便签和纪念日，让交互不止于一问一答。</p></div><span class="interest-number">01</span></div>
+        <div class="interest"><span class="interest-icon" aria-hidden="true">⌘</span><div><h3>为自己做些顺手的工具</h3><p>网站保活、主页卡片、在线编译器，解决一点具体的小麻烦。</p></div><span class="interest-number">02</span></div>
+        <div class="interest"><span class="interest-icon" aria-hidden="true">↗</span><div><h3>折腾设备，也记录过程</h3><p>手机里的 Codex、手环的数据、旧 MacBook 的修复，遇到问题就试着研究。</p></div><span class="interest-number">03</span></div>
       </div>
-    </div>
+    </section>
 
-    <!-- 异常日志 -->
-    <div class="section">
-      <div class="section-title">Anomaly Log</div>
-      <div class="anomaly-list">
-        <div class="anomaly-entry">
-          <span class="anomaly-time">2007.02.04</span>
-          <span class="anomaly-level">INFO</span>
-          <span class="anomaly-msg">实验体激活。初始状态：哭。诊断：正常。</span>
-        </div>
-        <div class="anomaly-entry">
-          <span class="anomaly-time">20XX.XX.XX</span>
-          <span class="anomaly-level">WARN</span>
-          <span class="anomaly-msg">认知引擎过载，已外包至 AI 处理。</span>
-        </div>
-        <div class="anomaly-entry">
-          <span class="anomaly-time">CURRENT</span>
-          <span class="anomaly-level">CRIT</span>
-          <span class="anomaly-msg">实验体声称自己将成为派大星。监控中。</span>
-        </div>
+    <section class="section projects-section" id="projects" aria-labelledby="projects-title">
+      <div class="section-heading"><div><p class="eyebrow">02 / THINGS I'VE BEEN MAKING</p><h2 id="projects-title">把想法，放进现实里<span class="small-star" aria-hidden="true">✦</span></h2></div><a class="text-link" href="https://github.com/fanxing724?tab=repositories" target="_blank" rel="noopener noreferrer">全部仓库 <span aria-hidden="true">↗</span></a></div>
+      <div class="filter-bar" role="group" aria-label="按方向筛选项目" hidden><button type="button" data-filter="all" aria-pressed="true">全部项目 <span>8</span></button><button type="button" data-filter="ai" aria-pressed="false">AI 与陪伴</button><button type="button" data-filter="tools" aria-pressed="false">实用工具</button><button type="button" data-filter="explore" aria-pressed="false">折腾手记</button></div>
+      <p id="filter-status" class="sr-only" role="status" aria-live="polite"></p>
+      <div class="project-grid">
+        <a class="project-card" data-category="ai" href="https://github.com/fanxing724/qwenpaw-companion-core" target="_blank" rel="noopener noreferrer"><div class="project-top"><span class="project-icon lavender" aria-hidden="true">♡</span><span class="project-kind">AI COMPANION</span><span class="project-arrow" aria-hidden="true">↗</span></div><h3>Companion Core</h3><p>给 QwenPaw 做的陪伴系统。把状态、梦境、日程和重要日期放进一个小小仪表盘。</p><div class="project-footer"><span>陪伴插件 · 平台适配</span><span>QwenPaw</span></div></a>
+        <a class="project-card" data-category="ai" href="https://github.com/fanxing724/edgeone-aichat" target="_blank" rel="noopener noreferrer"><div class="project-top"><span class="project-icon pink" aria-hidden="true">✧</span><span class="project-kind">AI ROLEPLAY</span><span class="project-arrow" aria-hidden="true">↗</span></div><h3>AI 剧场</h3><p>角色卡、世界书和流式对话，搭一个属于自己的 AI 小剧场，让故事继续发生。</p><div class="project-footer"><span>角色互动 · Web 应用</span><span>EdgeOne</span></div></a>
+        <a class="project-card" data-category="tools" href="https://github.com/fanxing724/pulse" target="_blank" rel="noopener noreferrer"><div class="project-top"><span class="project-icon mint" aria-hidden="true">⌁</span><span class="project-kind">WEBSITE MONITOR</span><span class="project-arrow" aria-hidden="true">↗</span></div><h3>Pulse</h3><p>给小服务器用的轻量保活面板。看看网站还在不在线，也留下一点运行的痕迹。</p><div class="project-footer"><span>网站保活 · 可用性监控</span><span>Python</span></div></a>
+        <a class="project-card" data-category="tools" href="https://github.com/fanxing724/new-make" target="_blank" rel="noopener noreferrer"><div class="project-top"><span class="project-icon blue" aria-hidden="true">▦</span><span class="project-kind">GITHUB CARDS</span><span class="project-arrow" aria-hidden="true">↗</span></div><h3>new-make</h3><p>为 GitHub 主页生成插画数据卡片。让统计自动更新，也让主页多一点自己的样子。</p><div class="project-footer"><span>数据卡片 · 自动化</span><span>GitHub Actions</span></div></a>
+        <a class="project-card" data-category="tools" href="https://github.com/fanxing724/LikeGirl-edgeone" target="_blank" rel="noopener noreferrer"><div class="project-top"><span class="project-icon peach" aria-hidden="true">❀</span><span class="project-kind">LITTLE MEMORIES</span><span class="project-arrow" aria-hidden="true">↗</span></div><h3>LikeGirl EdgeOne</h3><p>把 LikeGirl 情侣纪念小站适配到 EdgeOne，给相册、愿望和共同的日子找一个家。</p><div class="project-footer"><span>纪念小站 · 平台适配</span><span>EdgeOne</span></div></a>
+        <a class="project-card" data-category="tools" href="https://github.com/fanxing724/c-online-compiler" target="_blank" rel="noopener noreferrer"><div class="project-top"><span class="project-icon lavender" aria-hidden="true">&lt;/&gt;</span><span class="project-kind">ONLINE WORKSPACE</span><span class="project-arrow" aria-hidden="true">↗</span></div><h3>番星 C 语言编辑器</h3><p>打开浏览器就能写一点 C。用 CodeMirror 编辑，通过 Judge0 编译和运行。</p><div class="project-footer"><span>在线编辑 · 编译运行</span><span>C / Judge0</span></div></a>
+        <a class="project-card" data-category="explore" href="https://github.com/fanxing724/codex-termux" target="_blank" rel="noopener noreferrer"><div class="project-top"><span class="project-icon blue" aria-hidden="true">&gt;_</span><span class="project-kind">POCKET TOOLBOX</span><span class="project-arrow" aria-hidden="true">↗</span></div><h3>Codex Termux</h3><p>想在手机上也用上 Codex，于是折腾了 Termux 的环境修补和 API 配置工具。</p><div class="project-footer"><span>移动工具 · 环境适配</span><span>Android / Shell</span></div></a>
+        <a class="project-card" data-category="explore" href="https://github.com/fanxing724/honor-band-9" target="_blank" rel="noopener noreferrer"><div class="project-top"><span class="project-icon mint" aria-hidden="true">◎</span><span class="project-kind">DEVICE EXPLORATION</span><span class="project-arrow" aria-hidden="true">↗</span></div><h3>荣耀手环 9 探索</h3><p>想读到自己手环里的数据。记录蓝牙协议分析和测试工具，研究还在路上。</p><div class="project-footer"><span>协议研究 · 探索中</span><span>BLE / Android</span></div></a>
       </div>
-    </div>
+      <a class="notebook-link" href="https://github.com/fanxing724/macbook9.1" target="_blank" rel="noopener noreferrer"><span><span aria-hidden="true">↳</span> 还有一本折腾手记</span><span>MacBook9,1 × Ubuntu：声音与蓝牙的修复记录 <span aria-hidden="true">↗</span></span></a>
+    </section>
 
-    <!-- 底部 -->
-    <div class="footer">
-      <div class="footer-text">WUBBA LUBBA DUB DUB</div>
-      <div class="footer-bg">BACKGROUND PROCESS: 摸鱼 — PID 404 — CPU 3%</div>
-    </div>
+    <section class="section activity-section" id="activity" aria-labelledby="activity-title">
+      <div class="section-heading"><div><p class="eyebrow">03 / TRACES IN THE ORBIT</p><h2 id="activity-title">最近，留下的一点星轨。</h2></div><a class="text-link" href="https://github.com/fanxing724/new-make" target="_blank" rel="noopener noreferrer">卡片也是自己折腾的 <span aria-hidden="true">↗</span></a></div>
+      <div class="activity-grid">
+        <div class="data-panel"><span class="panel-caption">GITHUB / 概览</span><picture class="theme-picture"><source data-light media="(prefers-color-scheme: light)" srcset="https://fanxing724.github.io/new-make/fanxing724/stats.light.svg"><img src="https://fanxing724.github.io/new-make/fanxing724/stats.svg" alt="番星的 GitHub 统计：仓库、Star 和近 90 天提交" loading="lazy" width="450" height="210"></picture></div>
+        <div class="data-panel"><span class="panel-caption">ACTIVITY / 最近动态</span><picture class="theme-picture"><source data-light media="(prefers-color-scheme: light)" srcset="https://fanxing724.github.io/new-make/fanxing724/activity.light.svg"><img src="https://fanxing724.github.io/new-make/fanxing724/activity.svg" alt="番星最近的 GitHub 公开活动" loading="lazy" width="400" height="226"></picture></div>
+      </div>
+      <p class="activity-note">小小的提交，也是想法落地的痕迹。<a href="https://fanxing724.github.io/new-make/" target="_blank" rel="noopener noreferrer">查看全部数据卡片 ↗</a></p>
+    </section>
 
-  </div>
-</div>
+    <section class="section archive-section" aria-labelledby="archive-title">
+      <details id="archive"><summary><span><span class="eyebrow">BONUS / TERMINAL ARCHIVE</span><span class="archive-title" id="archive-title">来自 C-137 的实验体档案 <span class="archive-hint">一点旧日的中二，继续保留。</span></span></span><span class="archive-indicator" aria-hidden="true">+</span></summary>
+        <div class="archive-content"><div><h3>// SUBJECT PARAMETERS</h3><dl class="parameters"><div><dt>SUBJECT</dt><dd>ANO-137 / FAN-C137</dd></div><div><dt>出厂日期</dt><dd>REDACTED</dd></div><div><dt>常驻坐标</dt><dd>SECTOR C-137</dd></div><div><dt>运行模式</dt><dd>LOW POWER / IDLE</dd></div><div><dt>认知引擎</dt><dd>AI ASSISTED</dd></div><div><dt>思考协议</dt><dd>外包给 AI</dd></div><div><dt>性格</dt><dd>内向内敛</dd></div><div><dt>充能需求</dt><dd>8–10H 休眠周期</dd></div><div><dt>状态</dt><dd>FUNCTIONAL</dd></div></dl></div><div><h3>// ANOMALY LOG</h3><ol class="anomaly-log"><li><span>2007.02.04 · INFO</span><p>实验体激活。初始状态：哭。诊断：正常。</p></li><li><span>20XX.XX.XX · WARN</span><p>认知引擎过载，已外包至 AI 处理。</p></li><li><span>CURRENT · CRIT</span><p>实验体声称自己将成为派大星。监控中。</p></li></ol><p class="terminal-signature">WUBBA LUBBA DUB DUB <span aria-hidden="true">▌</span></p></div></div>
+      </details>
+    </section>
 
-<script>
-  // === 启动动画 ===
-  const bootLines = [
-    { text: "[ <span class='ok'>OK</span> ] Initializing C-137 portal gateway...", delay: 200 },
-    { text: "[ <span class='ok'>OK</span> ] Establishing interdimensional link...", delay: 300 },
-    { text: "[ <span class='ok'>OK</span> ] Decrypting subject file FAN-C137...", delay: 350 },
-    { text: "[ <span class='ok'>OK</span> ] Classification level: PUBLIC", delay: 250 },
-    { text: "[ <span class='warn'>WARN</span> ] Subject status: ANOMALOUS_HUMAN", delay: 300 },
-    { text: "[ <span class='warn'>WARN</span> ] Power mode: LOW_POWER / IDLE", delay: 300 },
-    { text: "[ <span class='ok'>OK</span> ] Cognitive engine: AI_ASSISTED (delegated)", delay: 350 },
-    { text: "[ <span class='dim'>...</span> ] Loading modules: 4/4", delay: 300 },
-    { text: "", delay: 100 },
-    { text: "<span class='dim'>PORTAL ACCESS GRANTED.</span>", delay: 200 },
-    { text: "", delay: 100 },
-    { text: "<span class='ok'>Welcome to Dimension C-137.</span>", delay: 400 },
-  ];
-
-  const bootLog = document.getElementById('boot-log');
-  const bootContinue = document.getElementById('boot-continue');
-  const mainScreen = document.getElementById('main-screen');
-  const bootScreen = document.getElementById('boot-screen');
-
-  let lineIndex = 0;
-
-  function typeBootLine() {
-    if (lineIndex < bootLines.length) {
-      const line = bootLines[lineIndex];
-      const div = document.createElement('div');
-      div.className = 'boot-line';
-      div.innerHTML = line.text || '&nbsp;';
-      bootLog.appendChild(div);
-      lineIndex++;
-      setTimeout(typeBootLine, line.delay);
-    } else {
-      // 显示继续提示
-      setTimeout(() => {
-        bootContinue.style.opacity = '1';
-        bootContinue.style.animation = 'pulse 1.5s ease-in-out infinite';
-      }, 300);
-    }
-  }
-
-  // 点击任意位置进入
-  let entered = false;
-  function enterMain() {
-    if (entered) return;
-    entered = true;
-    bootScreen.style.transition = 'opacity 0.4s';
-    bootScreen.style.opacity = '0';
-    setTimeout(() => {
-      bootScreen.style.display = 'none';
-      mainScreen.style.display = 'block';
-      mainScreen.style.opacity = '0';
-      mainScreen.style.transition = 'opacity 0.5s';
-      requestAnimationFrame(() => {
-        mainScreen.style.opacity = '1';
-      });
-    }, 400);
-  }
-
-  // 启动
-  window.addEventListener('load', () => {
-    setTimeout(typeBootLine, 400);
-  });
-
-  // 防止用户错过动画直接点进
-  bootScreen.addEventListener('click', () => {
-    if (lineIndex >= bootLines.length) {
-      enterMain();
-    }
-  });
-</script>
-
+    <section class="closing" aria-label="个人签名"><span class="closing-star" aria-hidden="true">✦</span><p>宇宙没有 KPI，<br class="mobile-break">活着就不算宕机。</p><span class="eyebrow">KEEP CURIOUS. TAKE IT EASY.</span></section>
+  </main>
+  <footer class="site-footer shell"><a class="footer-name" href="#">番星 <span aria-hidden="true">✧</span></a><span>想法来自生活，代码借助 AI。</span><a href="https://github.com/fanxing724/fanxing724.github.io" target="_blank" rel="noopener noreferrer">本站源码 <span aria-hidden="true">↗</span></a><a class="back-top" href="#">回到顶部 ↑</a></footer>
 </body>
 </html>
