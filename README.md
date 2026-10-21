@@ -1,3 +1,16 @@
+<!-- fanxing-style:start -->
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="https://fanxing724.github.io/new-make/fanxing724/projects/fanxing724.github.io/cover.light.svg">
+  <img alt="番星 · 小小宇宙" src="https://fanxing724.github.io/new-make/fanxing724/projects/fanxing724.github.io/cover.svg" width="100%">
+</picture>
+
+**给散落的作品，留一扇能找到的门。**
+
+仓库里放源码，个人小站串起作品与记录。这个入口收集项目、归档和个人表达，让路过的人可以从一个地方继续探索。
+
+<sub>番星 / 星轨手记 · <a href="https://fanxing724.github.io/new-make/fanxing724/projects/style.html">风格样板</a> · <a href="https://fanxing724.github.io/">个人小站</a></sub>
+<!-- fanxing-style:end -->
+
 # 番星 · 小小宇宙
 
 个人站点：https://fanxing724.github.io/
