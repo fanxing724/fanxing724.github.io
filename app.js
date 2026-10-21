@@ -19,7 +19,7 @@
     const next = preferences[(preferences.indexOf(preference) + 1) % preferences.length];
     toggle.setAttribute('aria-label', `当前${labels[preference]}，切换到${labels[next]}`);
     toggle.title = `当前${labels[preference]} · 点击切换到${labels[next]}`;
-    document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#f6f8fc' : '#0c1425';
+    document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#f2f6fc' : '#0c1425';
   }
   toggle.hidden = false;
   toggle.addEventListener('click', () => {
@@ -32,7 +32,7 @@
 
   const filters = document.querySelector('.filter-bar');
   const projects = Array.from(document.querySelectorAll('.project-card'));
-  const grid = document.querySelector('.project-grid');
+  filters.querySelector('[data-filter="all"] span').textContent = projects.length;
   filters.hidden = false;
   filters.addEventListener('click', event => {
     const button = event.target.closest('button[data-filter]');
@@ -40,9 +40,8 @@
     const category = button.dataset.filter;
     filters.querySelectorAll('button').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
     projects.forEach(project => { project.hidden = category !== 'all' && project.dataset.category !== category; });
-    grid.classList.toggle('is-filtered', category !== 'all');
     const count = projects.filter(project => !project.hidden).length;
-    document.getElementById('filter-status').textContent = `已显示 ${count} 个项目`;
+    document.getElementById('filter-status').textContent = `已显示 ${count} 个精选项目；更多项目可展开下方目录。`;
   });
 
   document.querySelectorAll('.data-panel img').forEach(image => {
